@@ -1,6 +1,6 @@
 {
-  "name": "vstodo",
-  "displayName": "VSTodo",
+  "name": "vscribe",
+  "displayName": "vscribe",
   "description": "Keeping track of stuff",
   "version": "0.0.1",
   "engines": {
@@ -10,52 +10,52 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:vstodo.helloWorld",
-    "onCommand:vstodo.askQuestion",
-    "onCommand:vstodo.refresh",
-    "onCommand:vstodo.addTodo",
-    "onView:vstodo-sidebar"
+    "onCommand:vscribe.helloWorld",
+    "onCommand:vscribe.askQuestion",
+    "onCommand:vscribe.refresh",
+    "onCommand:vscribe.addTodo",
+    "onView:vscribe-sidebar"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "vstodo-sidebar-view",
-          "title": "VSTodo",
+          "id": "vscribe-sidebar-view",
+          "title": "vscribe",
           "icon": "media/checklist.svg"
         }
       ]
     },
     "views": {
-      "vstodo-sidebar-view": [
+      "vscribe-sidebar-view": [
         {
           "type": "webview",
-          "id": "vstodo-sidebar",
-          "name": "VSTodo",
+          "id": "vscribe-sidebar",
+          "name": "vscribe",
           "icon": "media/checklist.svg",
-          "contextualTitle": "VSTodo"
+          "contextualTitle": "vscribe"
         }
       ]
     },
     "commands": [
       {
-        "command": "vstodo.helloWorld",
+        "command": "vscribe.helloWorld",
         "title": "Hello World"
       },
       {
-        "command": "vstodo.askQuestion",
-        "category": "VSTodo",
+        "command": "vscribe.askQuestion",
+        "category": "vscribe",
         "title": "Ask Question"
       },
       {
-        "command": "vstodo.refresh",
-        "category": "VSTodo",
+        "command": "vscribe.refresh",
+        "category": "vscribe",
         "title": "Refresh"
       },
       {
-        "command": "vstodo.addTodo",
-        "category": "VSTodo",
+        "command": "vscribe.addTodo",
+        "category": "vscribe",
         "title": "Add Todo From Selection"
       }
     ]
@@ -63,7 +63,8 @@
   "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "webpack --config ./build/node-extension.webpack.config.js",
-    "watch": "concurrently \"rollup -c -w\" \"webpack --watch --config ./build/node-extension.webpack.config.js\"",
+    "svelte-test": "rollup -c -w", 
+    "watch": "concurrently \"set NODE_OPTIONS=--openssl-legacy-provider\" \"rollup -c -w\" \"webpack --watch --config ./build/node-extension.webpack.config.js\"",  
     "package": "webpack --mode production --devtool hidden-source-map --config ./build/node-extension.webpack.config.js",
     "test-compile": "tsc -p ./",
     "test-watch": "tsc -watch -p ./",

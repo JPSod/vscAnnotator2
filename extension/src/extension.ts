@@ -11,15 +11,15 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.StatusBarAlignment.Right
   );
   item.text = "$(beaker) Add Todo";
-  item.command = "vstodo.addTodo";
+  item.command = "vscribe.addTodo";
   item.show();
 
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider("vstodo-sidebar", sidebarProvider)
+    vscode.window.registerWebviewViewProvider("vscribe-sidebar", sidebarProvider)
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("vstodo.addTodo", () => {
+    vscode.commands.registerCommand("vscribe.addTodo", () => {
       const { activeTextEditor } = vscode.window;
 
       if (!activeTextEditor) {
@@ -39,18 +39,18 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("vstodo.helloWorld", () => {
+    vscode.commands.registerCommand("vscribe.helloWorld", () => {
       HelloWorldPanel.createOrShow(context.extensionUri);
     })
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("vstodo.refresh", async () => {
+    vscode.commands.registerCommand("vscribe.refresh", async () => {
       // HelloWorldPanel.kill();
       // HelloWorldPanel.createOrShow(context.extensionUri);
       await vscode.commands.executeCommand("workbench.action.closeSidebar");
       await vscode.commands.executeCommand(
-        "workbench.view.extension.vstodo-sidebar-view"
+        "workbench.view.extension.vscribe-sidebar-view"
       );
       // setTimeout(() => {
       //   vscode.commands.executeCommand(
@@ -61,7 +61,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("vstodo.askQuestion", async () => {
+    vscode.commands.registerCommand("vscribe.askQuestion", async () => {
       const answer = await vscode.window.showInformationMessage(
         "How was your day?",
         "good",
