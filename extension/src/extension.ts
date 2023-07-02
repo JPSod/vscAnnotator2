@@ -21,7 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider("vscribe-sidebar-test", sidebarStandardsProvider)
+    vscode.window.registerWebviewViewProvider("vscribe-sidebar-standards", sidebarStandardsProvider)
   );
 
   context.subscriptions.push(
