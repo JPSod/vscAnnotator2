@@ -2,10 +2,12 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
 import { HelloWorldPanel } from "./HelloWorldPanel";
-import { SidebarProvider } from "./SidebarProvider";
+import { SidebarScannerProvider } from "./SidebarScannerProvider";
+import { SidebarStandardsProvider } from "./SidebarStandardsProvider";
 
 export function activate(context: vscode.ExtensionContext) {
-  const sidebarProvider = new SidebarProvider(context.extensionUri);
+  const sidebarScannerProvider = new SidebarScannerProvider(context.extensionUri);
+  const sidebarStandardsProvider = new SidebarStandardsProvider(context.extensionUri);
 
   const item = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Right
@@ -15,7 +17,11 @@ export function activate(context: vscode.ExtensionContext) {
   item.show();
 
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider("vscribe-sidebar", sidebarProvider)
+    vscode.window.registerWebviewViewProvider("vscribe-sidebar-scanner", sidebarScannerProvider)
+  );
+
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider("vscribe-sidebar-test", sidebarStandardsProvider)
   );
 
   context.subscriptions.push(
@@ -31,7 +37,7 @@ export function activate(context: vscode.ExtensionContext) {
         activeTextEditor.selection
       );
 
-      sidebarProvider._view?.webview.postMessage({
+      sidebarScannerProvider._view?.webview.postMessage({
         type: "new-todo",
         value: text,
       });

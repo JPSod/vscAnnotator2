@@ -13,8 +13,8 @@
     "onCommand:vscribe.helloWorld",
     "onCommand:vscribe.askQuestion",
     "onCommand:vscribe.refresh",
-    "onCommand:vscribe.addTodo",
-    "onView:vscribe-sidebar"
+    "onView:vscribe-sidebar-scanner",
+    "onView:vscribe-sidebar-standards"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -22,8 +22,8 @@
       "activitybar": [
         {
           "id": "vscribe-sidebar-view",
-          "title": "vscribe",
-          "icon": "media/checklist.svg"
+          "title": "VScribe",
+          "icon": "media/sideSymbol.svg"
         }
       ]
     },
@@ -31,9 +31,16 @@
       "vscribe-sidebar-view": [
         {
           "type": "webview",
-          "id": "vscribe-sidebar",
-          "name": "vscribe",
-          "icon": "media/checklist.svg",
+          "id": "vscribe-sidebar-scanner",
+          "name": "Scanner",
+          "icon": "media/sideSymbol.svg",
+          "contextualTitle": "vscribe"
+        },
+        {
+          "type": "webview",
+          "id": "vscribe-sidebar-standards",
+          "name": "Standards",
+          "icon": "media/sideSymbol.svg",
           "contextualTitle": "vscribe"
         }
       ]
@@ -52,11 +59,6 @@
         "command": "vscribe.refresh",
         "category": "vscribe",
         "title": "Refresh"
-      },
-      {
-        "command": "vscribe.addTodo",
-        "category": "vscribe",
-        "title": "Add Todo From Selection"
       }
     ]
   },
@@ -64,7 +66,7 @@
     "vscode:prepublish": "npm run package",
     "compile": "webpack --config ./build/node-extension.webpack.config.js",
     "svelte-test": "rollup -c -w", 
-    "watch": "concurrently \"set NODE_OPTIONS=--openssl-legacy-provider\" \"rollup -c -w\" \"webpack --watch --config ./build/node-extension.webpack.config.js\"",  
+    "watch": "concurrently \"rollup -c -w\" \"set NODE_OPTIONS=--openssl-legacy-provider\" \"webpack --watch --config ./build/node-extension.webpack.config.js\"",  
     "package": "webpack --mode production --devtool hidden-source-map --config ./build/node-extension.webpack.config.js",
     "test-compile": "tsc -p ./",
     "test-watch": "tsc -watch -p ./",
