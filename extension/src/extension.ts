@@ -45,6 +45,46 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
+    vscode.commands.registerCommand('vscribe.scanFile', (standards) => {
+        const editor = vscode.window.activeTextEditor;
+
+        if (!editor) {
+          vscode.window.showErrorMessage("No active text editor");
+          return;
+        }
+
+        if (!(editor && editor.document.languageId === 'python')) {
+            vscode.window.showErrorMessage('Active file is not a Python file!');
+            return;
+        } 
+
+        if (!standards) {
+          vscode.window.showErrorMessage('No standard selected!');
+          return;
+        }
+
+        vscode.window.showInformationMessage(standards);
+        const text = editor.document.getText();
+
+        const strings: string[] = [];
+
+        // Regular expression to match strings in Python
+        const regex = /(['"])(?:(?=(\\?))\2.)*?\1/g;
+
+        let match;
+        while ((match = regex.exec(text))) {
+            const string = match[0];
+            strings.push(string);
+        }
+
+        const numStrings = strings.length;
+
+        vscode.window.showInformationMessage(`Number of strings: ${numStrings}`);
+        vscode.window.showInformationMessage(`Strings: ${strings.join(', ')}`);
+    })
+  );
+
+  context.subscriptions.push(
     vscode.commands.registerCommand("vscribe.helloWorld", () => {
       HelloWorldPanel.createOrShow(context.extensionUri);
     })

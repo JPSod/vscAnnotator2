@@ -23,12 +23,8 @@
       const selectedCheckboxLabels = selectedCheckboxes.map(
         checkbox => checkbox.label
       );
-      tsvscode.postMessage({ type: 'onInfo', value: `Selected checkboxes: ${selectedCheckboxLabels.join(', ')}`
-      });
-    }
-
-    let expanded = false;
-    let headerText = 'Scan Results';
+      tsvscode.postMessage({ type: 'onScan', value: `${selectedCheckboxLabels}`});
+      };
     
   </script>
   
@@ -54,13 +50,6 @@
     </div>
 
   </main>
-
-  <!--
- <button
-     on:click={() => {
-         tsvscode.postMessage({ type: 'onError', value: 'error message' });
-     }}>click me for error</button>
-     -->
 
 <style>
     label {

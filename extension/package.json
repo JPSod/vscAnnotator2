@@ -9,13 +9,6 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:vscribe.helloWorld",
-    "onCommand:vscribe.askQuestion",
-    "onCommand:vscribe.refresh",
-    "onView:vscribe-sidebar-scanner",
-    "onView:vscribe-sidebar-standards"
-  ],
   "main": "./dist/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -54,6 +47,11 @@
         "command": "vscribe.askQuestion",
         "category": "vscribe",
         "title": "Ask Question"
+      },
+      {
+        "command": "vscribe.scanFile",
+        "category": "vscribe",
+        "title": "Scan File"
       },
       {
         "command": "vscribe.refresh",

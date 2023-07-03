@@ -1,6 +1,14 @@
 import * as vscode from "vscode";
 import { getNonce } from "./getNonce";
 
+async function callScanFileCommand(data: any) {
+  try {
+      await vscode.commands.executeCommand('vscribe.scanFile', data);
+  } catch (error) {
+      console.error('Failed to execute the scanFile command:', error);
+  }
+}
+
 export class SidebarStandardsProvider implements vscode.WebviewViewProvider {
   _view?: vscode.WebviewView;
   _doc?: vscode.TextDocument;
@@ -28,11 +36,8 @@ export class SidebarStandardsProvider implements vscode.WebviewViewProvider {
           vscode.window.showInformationMessage(data.value);
           break;
         }
-        case "onError": {
-          if (!data.value) {
-            return;
-          }
-          vscode.window.showErrorMessage(data.value);
+        case "onScan": {
+          await callScanFileCommand(data.value);
           break;
         }
       }
