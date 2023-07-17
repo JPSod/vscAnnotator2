@@ -106,6 +106,7 @@
     "webpack-cli": "^4.2.0"
   },
   "dependencies": {
+    "axios": "^1.4.0",
     "node-fetch": "^3.3.1",
     "polka": "^0.5.2"
   }

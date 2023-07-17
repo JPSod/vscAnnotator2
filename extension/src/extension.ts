@@ -7,7 +7,7 @@ import { SidebarStandardsProvider } from "./SidebarStandardsProvider";
 import { authenticate } from "./authenticate";
 import { TokenManager } from "./tokenManager";
 import { apiBaseUrl } from "./constants";
-import fetch from 'node-fetch';
+import axios from 'axios';
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -51,7 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
           return;
         }
 
-        vscode.window.showInformationMessage(args[0]);
+        vscode.window.showInformationMessage(args[1]);
         const text = editor.document.getText();
 
         const strings: string[] = [];
@@ -69,23 +69,21 @@ export function activate(context: vscode.ExtensionContext) {
 
         vscode.window.showInformationMessage(`Number of strings: ${numStrings}`);
         vscode.window.showInformationMessage(`Strings: ${strings.join(', ')}`);
+        
+        const response = await axios.post(`${apiBaseUrl}/scans`, {
+          standard: args[0],
+          value: text,
+          file: editor.document.fileName,
+        }, {
+          headers: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'Content-Type': 'application/json',
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'Authorization': `Bearer ${args[1]}`,
+          },
+        });
 
-        //const response = await fetch(`${apiBaseUrl}/scan`, {
-        //  method: 'POST',
-        //  headers: { 
-        //    // eslint-disable-next-line @typescript-eslint/naming-convention
-        //    'Content-Type': 'application/json',
-        //    // eslint-disable-next-line @typescript-eslint/naming-convention
-        //    Authorization: `Bearer ${args[1]}`,
-        //   },
-        //  body: JSON.stringify({
-        //    standard: args[0],
-        //    value: text,
-        //    file: editor.document.fileName,
-        //  }),
-        //});
-//
-        //const {scan} = await response.json();
+        const {scan} = await response.data();
     })
   );
 

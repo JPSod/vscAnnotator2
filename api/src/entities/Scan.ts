@@ -9,7 +9,7 @@ export class Scan extends BaseEntity {
   @Column()
     standard: string;
 
-  @Column()
+  @Column("float")
     value: number;
 
   @CreateDateColumn()

@@ -107,8 +107,8 @@ const main = async () => {
   app.post("/scans", isAuth, async (req: any, res) => {
 
     // some tests to see if valid scan
-    if (req.body.text.length > 5000) {
-      res.send({ error: "Text too long" });
+    if (req.body.value.length > 50000) {
+      res.status(400).json({ error: "Text too long" });
       return;
     }
 
