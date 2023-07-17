@@ -1,9 +1,12 @@
 import * as vscode from "vscode";
 import { getNonce } from "./getNonce";
+import { apiBaseUrl } from "./constants";
+import { TokenManager } from "./tokenManager";
+import { authenticate } from "./authenticate";
 
-async function callScanFileCommand(data: any) {
+async function callScanFileCommand(standards: any, accessToken: string) {
   try {
-      await vscode.commands.executeCommand('vscribe.scanFile', data);
+      await vscode.commands.executeCommand('vscribe.scanFile', [standards, accessToken] );
   } catch (error) {
       console.error('Failed to execute the scanFile command:', error);
   }
@@ -36,7 +39,25 @@ export class SidebarScannerProvider implements vscode.WebviewViewProvider {
           break;
         }
         case "onScan": {
-          await callScanFileCommand(data.value);
+          await callScanFileCommand(data.standards, data.accessToken);
+          break;
+        }
+        case "get-token": {
+          webviewView.webview.postMessage({
+            type: 'token', 
+            value: TokenManager.getToken()});
+          break;
+        }
+        case "login": {
+          authenticate(() => {
+            webviewView.webview.postMessage({
+              type: 'token', 
+              value: TokenManager.getToken()});
+          });
+          break;
+        }
+        case "logout": {
+          TokenManager.setToken('');
           break;
         }
       }
@@ -79,6 +100,7 @@ export class SidebarScannerProvider implements vscode.WebviewViewProvider {
 				<link href="${styleVSCodeUri}" rel="stylesheet">
         <link href="${styleMainUri}" rel="stylesheet">
         <script nonce="${nonce}">
+          const apiBaseUrl = ${JSON.stringify(apiBaseUrl)};
           const tsvscode = acquireVsCodeApi();
         </script>
 			</head>

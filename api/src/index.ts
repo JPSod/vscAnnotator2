@@ -8,6 +8,10 @@ import { join } from "path";
 import passport from "passport";
 import { Strategy as GitHubStrategy } from "passport-github2";
 import jwt from "jsonwebtoken";	
+import session from "express-session";
+import cors from "cors";
+import { Scan } from "./entities/Scan";
+import { isAuth } from "./isAuth";
 
 export const conn = new DataSource({
   type: "postgres",
@@ -32,6 +36,10 @@ const main = async () => {
     done(null, user.accessToken);
   });
 
+  passport.deserializeUser(function(obj: false | null | undefined | User, done) {
+    done(null, obj);
+  });
+
   passport.use(
     new GitHubStrategy({
       clientID: process.env.GITHUB_CLIENT_ID,
@@ -50,7 +58,7 @@ const main = async () => {
         }).save();
       }
       cb(null, {
-        accessToken: jwt.sign({ userId: user.id }, "asfoiquwofjqwofq", {
+        accessToken: jwt.sign({ userId: user.id }, process.env.JWT_ACCESS, {
           expiresIn: "1y",
         }),
       });
@@ -59,7 +67,19 @@ const main = async () => {
   ));
 
   var app = express();
-  
+
+  const oneDay = 1000 * 60 * 60 * 24;
+  app.use(session({
+      secret: process.env.SESSION_SECRET,
+      saveUninitialized:true,
+      cookie: { maxAge: oneDay },
+      resave: false 
+  }));
+
+  app.use(cors({origin: '*'}));
+
+  app.use(express.json());
+
   app.use(passport.initialize());
   
   app.use(passport.session());
@@ -72,11 +92,76 @@ const main = async () => {
   }
   );
 
-  app.get('/auth/github/callback', passport.authenticate('github', { session: false }), // { failureRedirect: '/login' } ??
-    (_req, res) => {
-      // Successful authentication
-      res.send('Successful login');
-    });
+  app.get('/auth/github/callback', passport.authenticate('github',  { scope: [ 'user:email' ] }), // { failureRedirect: '/login' } ??
+      (req: any, res) => {
+        res.redirect(`http://localhost:54321/auth/${req.user.accessToken}`);
+      }
+    );
+
+  app.get("/scans", async (req: any, res) => {
+    const scans = await Scan.find({where: {creatorId: req.userId}, order: {id: "DESC"}});
+    res.send({ scans });
+  });
+
+
+  app.post("/scans", isAuth, async (req: any, res) => {
+
+    // some tests to see if valid scan
+    if (req.body.text.length > 5000) {
+      res.send({ error: "Text too long" });
+      return;
+    }
+
+    // send stuff to flask server and get back value
+    req.body.value = 0.5;
+
+    const scan = Scan.create({
+      standard: req.body.standard,
+      value: req.body.value,
+      file: req.body.file,
+      creatorId: req.userId,
+    }); 
+    
+    await scan.save();
+    
+    res.send({ scan });
+
+  });
+
+  app.get("/me", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      res.send({ user:null });
+      return;
+    }
+    
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      res.send({ user:null });
+      return;
+    }
+
+    let userId: number | null | undefined;
+
+    try {
+      const payload: any = jwt.verify(token, process.env.JWT_ACCESS);
+      userId = payload.userId;
+
+    } catch (err){
+      res.send({ user:null });
+      console.log(err);
+      return;
+    }
+
+    if (!userId) {
+      res.send({ user:null });
+      return;
+    }
+
+    const user = await User.findOneBy({id: userId});
+    res.json({ user });
+
+  });
 
 
   app.get("/", (_req, res) => {

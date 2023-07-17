@@ -4,17 +4,25 @@ import * as vscode from "vscode";
 import { HelloWorldPanel } from "./HelloWorldPanel";
 import { SidebarScannerProvider } from "./SidebarScannerProvider";
 import { SidebarStandardsProvider } from "./SidebarStandardsProvider";
+import { authenticate } from "./authenticate";
+import { TokenManager } from "./tokenManager";
+import { apiBaseUrl } from "./constants";
+import fetch from 'node-fetch';
+
 
 export function activate(context: vscode.ExtensionContext) {
+
+  TokenManager.globalState = context.globalState;
+
   const sidebarScannerProvider = new SidebarScannerProvider(context.extensionUri);
   const sidebarStandardsProvider = new SidebarStandardsProvider(context.extensionUri);
 
-  const item = vscode.window.createStatusBarItem(
-    vscode.StatusBarAlignment.Right
-  );
-  item.text = "$(beaker) Add Todo";
-  item.command = "vscribe.addTodo";
-  item.show();
+  //const item = vscode.window.createStatusBarItem(
+  //  vscode.StatusBarAlignment.Right
+  //);
+  //item.text = "$(beaker) Add Todo";
+  //item.command = "vscribe.addTodo";
+  //item.show();
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("vscribe-sidebar-scanner", sidebarScannerProvider)
@@ -25,27 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("vscribe.addTodo", () => {
-      const { activeTextEditor } = vscode.window;
-
-      if (!activeTextEditor) {
-        vscode.window.showInformationMessage("No active text editor");
-        return;
-      }
-
-      const text = activeTextEditor.document.getText(
-        activeTextEditor.selection
-      );
-
-      sidebarScannerProvider._view?.webview.postMessage({
-        type: "new-todo",
-        value: text,
-      });
-    })
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('vscribe.scanFile', (standards) => {
+    vscode.commands.registerCommand('vscribe.scanFile', async (args) => {
         const editor = vscode.window.activeTextEditor;
 
         if (!editor) {
@@ -58,12 +46,12 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         } 
 
-        if (!standards) {
+        if (!args[0]) {
           vscode.window.showErrorMessage('No standard selected!');
           return;
         }
 
-        vscode.window.showInformationMessage(standards);
+        vscode.window.showInformationMessage(args[0]);
         const text = editor.document.getText();
 
         const strings: string[] = [];
@@ -81,12 +69,36 @@ export function activate(context: vscode.ExtensionContext) {
 
         vscode.window.showInformationMessage(`Number of strings: ${numStrings}`);
         vscode.window.showInformationMessage(`Strings: ${strings.join(', ')}`);
+
+        //const response = await fetch(`${apiBaseUrl}/scan`, {
+        //  method: 'POST',
+        //  headers: { 
+        //    // eslint-disable-next-line @typescript-eslint/naming-convention
+        //    'Content-Type': 'application/json',
+        //    // eslint-disable-next-line @typescript-eslint/naming-convention
+        //    Authorization: `Bearer ${args[1]}`,
+        //   },
+        //  body: JSON.stringify({
+        //    standard: args[0],
+        //    value: text,
+        //    file: editor.document.fileName,
+        //  }),
+        //});
+//
+        //const {scan} = await response.json();
     })
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand("vscribe.helloWorld", () => {
       HelloWorldPanel.createOrShow(context.extensionUri);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscribe.authenticate", () => {
+      authenticate(() => {});
+      //vscode.window.showInformationMessage('token value: ' + TokenManager.getToken());
     })
   );
 
@@ -125,3 +137,4 @@ export function activate(context: vscode.ExtensionContext) {
 
 // this method is called when your extension is deactivated
 export function deactivate() {}
+
