@@ -8,6 +8,7 @@ import { authenticate } from "./authenticate";
 import { TokenManager } from "./tokenManager";
 import { apiBaseUrl } from "./constants";
 import axios from 'axios';
+import { access } from "fs";
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -36,6 +37,10 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('vscribe.scanFile', async (args) => {
         const editor = vscode.window.activeTextEditor;
 
+        const standard = args[0];
+        const accessToken = args[1];
+        
+
         if (!editor) {
           vscode.window.showErrorMessage("No active text editor");
           return;
@@ -46,32 +51,32 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         } 
 
-        if (!args[0]) {
+        // eslint-disable-next-line eqeqeq
+        if (!standard || standard == 'Please select a standard' ) {
           vscode.window.showErrorMessage('No standard selected!');
           return;
         }
 
-        vscode.window.showInformationMessage(args[1]);
         const text = editor.document.getText();
 
-        const strings: string[] = [];
+        //const strings: string[] = [];
 
-        // Regular expression to match strings in Python
-        const regex = /(['"])(?:(?=(\\?))\2.)*?\1/g;
+        //// Regular expression to match strings in Python
+        //const regex = /(['"])(?:(?=(\\?))\2.)*?\1/g;
 
-        let match;
-        while ((match = regex.exec(text))) {
-            const string = match[0];
-            strings.push(string);
-        }
+        //let match;
+        //while ((match = regex.exec(text))) {
+        //    const string = match[0];
+        //    strings.push(string);
+        //}
 
-        const numStrings = strings.length;
+        //const numStrings = strings.length;
 
-        vscode.window.showInformationMessage(`Number of strings: ${numStrings}`);
-        vscode.window.showInformationMessage(`Strings: ${strings.join(', ')}`);
+        //vscode.window.showInformationMessage(`Number of strings: ${numStrings}`);
+        //vscode.window.showInformationMessage(`Strings: ${strings.join(', ')}`);
         
-        const response = await axios.post(`${apiBaseUrl}/scans`, {
-          standard: args[0],
+        await axios.post(`${apiBaseUrl}/scans`, {
+          standard: standard,
           value: text,
           file: editor.document.fileName,
         }, {
@@ -79,11 +84,10 @@ export function activate(context: vscode.ExtensionContext) {
             // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/json',
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            'Authorization': `Bearer ${args[1]}`,
+            'Authorization': `Bearer ${accessToken}`,
           },
         });
 
-        const {scan} = await response.data();
     })
   );
 
@@ -113,22 +117,6 @@ export function activate(context: vscode.ExtensionContext) {
       //     "workbench.action.webview.openDeveloperTools"
       //   );
       // }, 500);
-    })
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand("vscribe.askQuestion", async () => {
-      const answer = await vscode.window.showInformationMessage(
-        "How was your day?",
-        "good",
-        "bad"
-      );
-
-      if (answer === "bad") {
-        vscode.window.showInformationMessage("Sorry to hear that");
-      } else {
-        console.log({ answer });
-      }
     })
   );
 }

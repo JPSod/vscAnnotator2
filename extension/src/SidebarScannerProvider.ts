@@ -4,9 +4,9 @@ import { apiBaseUrl } from "./constants";
 import { TokenManager } from "./tokenManager";
 import { authenticate } from "./authenticate";
 
-async function callScanFileCommand(standards: any, accessToken: string) {
+async function callScanFileCommand(standard: any, accessToken: string) {
   try {
-      await vscode.commands.executeCommand('vscribe.scanFile', [standards, accessToken] );
+      await vscode.commands.executeCommand('vscribe.scanFile', [standard, accessToken] );
   } catch (error) {
       console.error('Failed to execute the scanFile command:', error);
   }
@@ -39,7 +39,7 @@ export class SidebarScannerProvider implements vscode.WebviewViewProvider {
           break;
         }
         case "onScan": {
-          await callScanFileCommand(data.standards, data.accessToken);
+          await callScanFileCommand(data.standard, data.accessToken);
           break;
         }
         case "get-token": {
