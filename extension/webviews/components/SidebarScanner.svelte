@@ -44,10 +44,6 @@
       user = null;
       tsvscode.postMessage({ type: 'logout' });
     };
-
-    function handleDropdownChange(event) {
-    selectedStandard = event.target.value;
-    }
   
     function handleClick() {
       tsvscode.postMessage({ type: 'onScan', standard: selectedStandard, accessToken: accessToken });
@@ -178,6 +174,9 @@
       </div>
 
       <div>
+        <div style="margin-top: 1rem; margin-bottom: 1rem;">
+          <strong>Previous Scans:</strong>
+        </div>
         {#each displayedScans as scan}
           <div class="scan-card">
             <div>
