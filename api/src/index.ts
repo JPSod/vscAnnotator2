@@ -112,6 +112,8 @@ const main = async () => {
       return;
     }
 
+    //use axios to get the standard from database
+
     // send stuff to flask server and get back value
     req.body.value = 0.5;
 

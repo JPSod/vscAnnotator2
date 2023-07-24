@@ -1,6 +1,7 @@
 
 <script lang="js">
     import { onMount } from "svelte";
+    import { derived, writable } from "svelte/store";
 
     let accessToken = ''
 
@@ -16,7 +17,10 @@
     let loading = true;
     let user = null;
     let data = null;
+    let searchTerm = '';
     let scans = [];
+    const displayedScansStore = writable([]);
+    let displayedScans = [];
     let selectedStandard = options[0].label;
 
     let showDropdown = false;
@@ -59,11 +63,53 @@
 
         const payload = await response.json();
         scans = payload.scans;
+        filterScans();
+        displayedScansStore.set(filteredScans);
         displayedScans = getScansForPage();
       }, 1000);
 
     };
 
+    function handleFormSubmit(event) {
+       event.preventDefault(); // Prevent form submission (and page refresh)
+    }
+
+
+    function handleSearch(event) {
+      searchTerm = event.target.value;
+      filterScans(); 
+      currentPage = 1; 
+      displayedScans = getScansForPage();
+    }
+
+    function filterScans() {
+      const filteredScans = scans.filter((scan) => {
+        const formattedDate = formatDate(scan.createdDate);
+        const formattedTime = formatTime(scan.createdDate);
+        const fileName = extractFileName(scan.file);
+      
+        return (
+          scan.standard.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          formattedDate.includes(searchTerm) ||
+          formattedTime.includes(searchTerm) ||
+          fileName.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      });
+
+      displayedScansStore.set(filteredScans);
+      currentPage = 1;
+    }
+
+    function handleSearchOnEnter(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        filterScans(); // Filter scans based on the search term
+        currentPage = 1; 
+        displayedScans.update(() => {
+          return getScansForPage();
+        });
+      }
+    }
 
     function NextPage() {
       currentPage += 1;
@@ -76,29 +122,35 @@
     }
 
     function getScansForPage() {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return scans.slice(startIndex, endIndex);
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      return $displayedScansStore.slice(startIndex, endIndex);
     }
 
     function extractFileName(filePath) {
-    const parts = filePath.split(/[\\/]/);
-    return parts[parts.length - 1];
+      const parts = filePath.split(/[\\/]/);
+      return parts[parts.length - 1];
     }
 
     function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(); // Format the date as per the user's locale
+      const date = new Date(dateString);
+      return date.toLocaleDateString(); // Format the date as per the user's locale
     }
 
     function formatTime(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString(); // Format the time as per the user's locale
+      const date = new Date(dateString);
+      return date.toLocaleTimeString(); // Format the time as per the user's locale
     }
 
     $: displayedScans = getScansForPage();
-    $: hasNextPage = scans && scans.length > currentPage * itemsPerPage;
+    $: hasNextPage = $displayedScansStore.length > currentPage * itemsPerPage;
     $: hasPreviousPage = currentPage > 1;
+
+    $: {
+        displayedScans = getScansForPage();
+        hasNextPage = $displayedScansStore.length > currentPage * itemsPerPage;
+        hasPreviousPage = currentPage > 1;
+      }
 
     onMount(async () => {
 
@@ -115,10 +167,7 @@
             });
           
             const data = await response.json();
-          
-            console.log(data);
             user = data.user;
-            console.log(user);
             loading = false;
             break;
         }
@@ -134,8 +183,8 @@
       
       const payload = await response.json();
       scans = payload.scans;
+      displayedScansStore.set(scans);
       displayedScans = getScansForPage();
-
       });
     
   </script>
@@ -177,12 +226,24 @@
         <div style="margin-top: 1rem; margin-bottom: 1rem;">
           <strong>Previous Scans:</strong>
         </div>
+
+        <div style="margin-top: 1rem; margin-bottom: 1rem;">
+          <form on:submit={handleFormSubmit}>
+            <input
+              type="text"
+              placeholder="Search scans..."
+              bind:value={searchTerm}
+              on:input={handleSearch}
+              on:keydown={handleSearchOnEnter}
+            />
+          </form>
+        </div>
+
         {#each displayedScans as scan}
           <div class="scan-card">
             <div>
               <p class="heading">Standard: {scan.standard}</p>
               <p class="heading">Date: {formatDate(scan.createdDate)}</p>
-              <!-- Include the time below the date -->
               <p class="heading">Time: {formatTime(scan.createdDate)}</p>
               <p class="heading">File: {extractFileName(scan.file)}</p>
             </div>
@@ -247,7 +308,7 @@
       .option::after {
         content: "";
         display: inline-block;
-        width: 28px; /* Width of the space between the option text and arrow */
+        width: 28px; 
       }
     
       /* Style the options container */
