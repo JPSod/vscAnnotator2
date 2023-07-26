@@ -1,9 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import { HelloWorldPanel } from "./HelloWorldPanel";
+import { EditStandardsPanel } from "./EditStandardsPanel";
 import { SidebarScannerProvider } from "./SidebarScannerProvider";
-import { SidebarStandardsProvider } from "./SidebarStandardsProvider";
 import { authenticate } from "./authenticate";
 import { TokenManager } from "./tokenManager";
 import { apiBaseUrl } from "./constants";
@@ -16,7 +15,6 @@ export function activate(context: vscode.ExtensionContext) {
   TokenManager.globalState = context.globalState;
 
   const sidebarScannerProvider = new SidebarScannerProvider(context.extensionUri);
-  const sidebarStandardsProvider = new SidebarStandardsProvider(context.extensionUri);
 
   //const item = vscode.window.createStatusBarItem(
   //  vscode.StatusBarAlignment.Right
@@ -30,14 +28,10 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider("vscribe-sidebar-standards", sidebarStandardsProvider)
-  );
-
-  context.subscriptions.push(
     vscode.commands.registerCommand('vscribe.scanFile', async (args) => {
         const editor = vscode.window.activeTextEditor;
 
-        const standard = args[0];
+        const standardId = args[0];
         const accessToken = args[1];
         
 
@@ -52,7 +46,7 @@ export function activate(context: vscode.ExtensionContext) {
         } 
 
         // eslint-disable-next-line eqeqeq
-        if (!standard || standard == 'Please select a standard' ) {
+        if (!standardId ) {
           vscode.window.showErrorMessage('No standard selected!');
           return;
         }
@@ -76,7 +70,7 @@ export function activate(context: vscode.ExtensionContext) {
         //vscode.window.showInformationMessage(`Strings: ${strings.join(', ')}`);
         
         await axios.post(`${apiBaseUrl}/scans`, {
-          standard: standard,
+          standardId: standardId,
           value: text,
           file: editor.document.fileName,
         }, {
@@ -92,8 +86,8 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("vscribe.helloWorld", () => {
-      HelloWorldPanel.createOrShow(context.extensionUri);
+    vscode.commands.registerCommand("vscribe.editStandards", () => {
+      EditStandardsPanel.createOrShow(context.extensionUri);
     })
   );
 
@@ -106,8 +100,6 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand("vscribe.refresh", async () => {
-      // HelloWorldPanel.kill();
-      // HelloWorldPanel.createOrShow(context.extensionUri);
       await vscode.commands.executeCommand("workbench.action.closeSidebar");
       await vscode.commands.executeCommand(
         "workbench.view.extension.vscribe-sidebar-view"

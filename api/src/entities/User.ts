@@ -1,5 +1,6 @@
 import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Scan } from "./Scan";
+import { Standard } from "./Standard";
 
 @Entity()
 export class User extends BaseEntity {
@@ -17,4 +18,7 @@ export class User extends BaseEntity {
   
   @OneToMany(() => Scan, scan => scan.creator)
   scans: Promise<Scan>;
+
+  @OneToMany(() => Standard, standard => standard.creator)
+  standards: Promise<Standard>;
 }

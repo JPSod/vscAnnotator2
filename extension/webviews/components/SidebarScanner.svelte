@@ -4,16 +4,6 @@
     import { derived, writable } from "svelte/store";
 
     let accessToken = ''
-
-    let options = [
-      { id: 0, label: 'Please select a standard'},
-      { id: 1, label: 'Standard A'},
-      { id: 2, label: 'Standard B'},
-      { id: 3, label: 'Standard C'},
-      { id: 2, label: 'Standard D'},
-      { id: 3, label: 'Standard E'}
-    ];
-
     let loading = true;
     let user = null;
     let data = null;
@@ -21,7 +11,9 @@
     let scans = [];
     const displayedScansStore = writable([]);
     let displayedScans = [];
-    let selectedStandard = options[0].label;
+    let options = [];
+    let selectedStandard = 'Please select a Standard'
+    let selectedStandardId = null;
 
     let showDropdown = false;
 
@@ -31,8 +23,9 @@
     }
 
     // Handle option selection
-    function selectOption(optionLabel) {
+    function selectOption(optionLabel, optionID) {
       selectedStandard = optionLabel;
+      selectedStandardId = optionID;
       showDropdown = false;
     }
 
@@ -50,7 +43,12 @@
     };
   
     function handleClick() {
-      tsvscode.postMessage({ type: 'onScan', standard: selectedStandard, accessToken: accessToken });
+      if (options.length == 0) {
+        tsvscode.postMessage({ type: 'onInfo', data: 'Please add a standard to perform a scan!' })
+        return;
+      }
+
+      tsvscode.postMessage({ type: 'onScan', standardId: selectedStandardId, accessToken: accessToken });
 
       setTimeout(async () => {
         tsvscode.postMessage({ type: 'get-token' });
@@ -89,7 +87,7 @@
         const fileName = extractFileName(scan.file);
       
         return (
-          scan.standard.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          scan.standardName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           formattedDate.includes(searchTerm) ||
           formattedTime.includes(searchTerm) ||
           fileName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -142,7 +140,6 @@
       return date.toLocaleTimeString(); // Format the time as per the user's locale
     }
 
-    $: displayedScans = getScansForPage();
     $: hasNextPage = $displayedScansStore.length > currentPage * itemsPerPage;
     $: hasPreviousPage = currentPage > 1;
 
@@ -151,6 +148,10 @@
         hasNextPage = $displayedScansStore.length > currentPage * itemsPerPage;
         hasPreviousPage = currentPage > 1;
       }
+
+    function editStandards() {
+      tsvscode.postMessage({ type: 'editStandards', accessToken: accessToken });
+    };
 
     onMount(async () => {
 
@@ -175,6 +176,8 @@
 
       tsvscode.postMessage({ type: 'get-token' });
 
+      // Make an API request to get the user's scans using their JWT
+
       const response = await fetch(`${apiBaseUrl}/scans`,{
               headers: { 
                 Authorization: `Bearer ${accessToken}`,
@@ -185,7 +188,22 @@
       scans = payload.scans;
       displayedScansStore.set(scans);
       displayedScans = getScansForPage();
-      });
+      
+      // Make an API request to get the user's standards using their JWT
+
+      const response2 = await fetch(`${apiBaseUrl}/standards`,{
+              headers: { 
+                Authorization: `Bearer ${accessToken}`,
+               },
+            });
+      
+      const payload2 = await response2.json();
+      options = payload2.standards;
+      if (options.length == 0) {
+        selectedStandard = 'Please add a Standard!';
+      }
+      
+    });
     
   </script>
 
@@ -194,7 +212,7 @@
   {:else if !user}
     <button on:click={handleLogin}>Login with GitHub</button>
   {:else}
-    <div>Hello <strong>{user.name}!</strong></div>
+    <div style="margin-top: 0.5cm;">Hello <strong>{user.name}!</strong></div>
     <button on:click={handleLogout}>Logout</button>
 
     <main>
@@ -202,24 +220,41 @@
           <p>Please choose which scan you would like to perform:</p>
       </div>
       
-      <div class="vscode-select">
-        <div class="selected-option" on:click={toggleDropdown}>
-          {selectedStandard}
-          <div class="vscode-select-arrow"></div>
-        </div>
-        {#if showDropdown}
-          <div class="options-container">
-            {#each options as option}
-              <div class="option" on:click={() => selectOption(option.label)}>
-                {option.label}
-              </div>
-            {/each}
+      {#if options}
+        <div class="vscode-select">
+          <div class="selected-option" on:click={toggleDropdown}>
+            {selectedStandard}
+            <div class="vscode-select-arrow"></div>
           </div>
-        {/if}
-      </div>
-  
+          {#if showDropdown}
+            <div class="options-container">
+              {#if options.length == 0}
+                <div class="option" on:click={() => selectOption('Please add a standard!', null)}>
+                  {'Please add a standard!'}
+                </div>
+              {:else}
+                <div class="option" on:click={() => selectOption('Please select a standard', null)}>
+                  {'Please select a standard'}
+                </div>
+              {/if}
+              {#each options as option}
+                <div class="option" on:click={() => selectOption(option.standard, option.id)}>
+                  {option.standard}
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {:else}
+        <p>Loading options...</p>
+      {/if}
+
       <div style="margin-top: 1rem; margin-bottom: 1rem;">
           <button on:click={handleClick}>Scan</button>
+      </div>
+
+      <div style="margin-top: 1rem; margin-bottom: 1cm;">
+        <button on:click={editStandards} style="background-color: #0e639c; color: white;">Edit Standards</button>
       </div>
 
       <div>
@@ -242,7 +277,7 @@
         {#each displayedScans as scan}
           <div class="scan-card">
             <div>
-              <p class="heading">Standard: {scan.standard}</p>
+              <p class="heading">Standard: {scan.standardName}</p>
               <p class="heading">Date: {formatDate(scan.createdDate)}</p>
               <p class="heading">Time: {formatTime(scan.createdDate)}</p>
               <p class="heading">File: {extractFileName(scan.file)}</p>
@@ -252,6 +287,7 @@
               <p class="value-number">{scan.value}</p>
             </div>
           </div>
+          <button style="margin-bottom: 1rem;"> Send Scan</button>
         {/each}
       </div>
   
@@ -340,7 +376,7 @@
       .scan-card {
         border: 1px solid #ccc;
         padding: 1rem;
-        margin-bottom: 1rem;
+        margin-bottom: 0rem;
         display: flex; 
         justify-content: space-between; 
         align-items: center;

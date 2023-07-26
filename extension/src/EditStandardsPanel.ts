@@ -1,13 +1,24 @@
 import * as vscode from "vscode";
 import { getNonce } from "./getNonce";
+import { apiBaseUrl } from "./constants";
+import { TokenManager } from "./tokenManager";
+import { authenticate } from "./authenticate";
 
-export class HelloWorldPanel {
+async function callRefreshCommand(accessToken: string) {
+  try {
+      await vscode.commands.executeCommand('vscribe.refresh');
+  } catch (error) {
+      console.error('Failed to execute the scanFile command:', error);
+  }
+}
+
+export class EditStandardsPanel {
   /**
    * Track the currently panel. Only allow a single panel to exist at a time.
    */
-  public static currentPanel: HelloWorldPanel | undefined;
+  public static currentPanel: EditStandardsPanel | undefined;
 
-  public static readonly viewType = "hello-world";
+  public static readonly viewType = "edit-standards";
 
   private readonly _panel: vscode.WebviewPanel;
   private readonly _extensionUri: vscode.Uri;
@@ -19,16 +30,16 @@ export class HelloWorldPanel {
       : undefined;
 
     // If we already have a panel, show it.
-    if (HelloWorldPanel.currentPanel) {
-      HelloWorldPanel.currentPanel._panel.reveal(column);
-      HelloWorldPanel.currentPanel._update();
+    if (EditStandardsPanel.currentPanel) {
+      EditStandardsPanel.currentPanel._panel.reveal(column);
+      EditStandardsPanel.currentPanel._update();
       return;
     }
 
     // Otherwise, create a new panel.
     const panel = vscode.window.createWebviewPanel(
-      HelloWorldPanel.viewType,
-      "HelloWorld",
+      EditStandardsPanel.viewType,
+      "EditStandards",
       column || vscode.ViewColumn.One,
       {
         // Enable javascript in the webview
@@ -42,16 +53,16 @@ export class HelloWorldPanel {
       }
     );
 
-    HelloWorldPanel.currentPanel = new HelloWorldPanel(panel, extensionUri);
+    EditStandardsPanel.currentPanel = new EditStandardsPanel(panel, extensionUri);
   }
 
   public static kill() {
-    HelloWorldPanel.currentPanel?.dispose();
-    HelloWorldPanel.currentPanel = undefined;
+    EditStandardsPanel.currentPanel?.dispose();
+    EditStandardsPanel.currentPanel = undefined;
   }
 
   public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
-    HelloWorldPanel.currentPanel = new HelloWorldPanel(panel, extensionUri);
+    EditStandardsPanel.currentPanel = new EditStandardsPanel(panel, extensionUri);
   }
 
   private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
@@ -80,7 +91,7 @@ export class HelloWorldPanel {
   }
 
   public dispose() {
-    HelloWorldPanel.currentPanel = undefined;
+    EditStandardsPanel.currentPanel = undefined;
 
     // Clean up our resources
     this._panel.dispose();
@@ -113,27 +124,35 @@ export class HelloWorldPanel {
           vscode.window.showErrorMessage(data.value);
           break;
         }
-        // case "tokens": {
-        //   await Util.globalState.update(accessTokenKey, data.accessToken);
-        //   await Util.globalState.update(refreshTokenKey, data.refreshToken);
-        //   break;
-        // }
+        case "get-token": {
+          webview.postMessage({
+            type: 'token', 
+            value: TokenManager.getToken()});
+          break;
+        }
+        case "refreshStandards": {
+          await callRefreshCommand(data.accessToken);
+          break;
+        }
       }
     });
   }
 
   private _getHtmlForWebview(webview: vscode.Webview) {
     // // And the uri we use to load this script in the webview
-    const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "out/compiled", "HelloWorld.js")
-    );
-
     // Uri to load styles into webview
     const stylesResetUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this._extensionUri, "media", "reset.css")
     );
     const stylesMainUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this._extensionUri, "media", "vscode.css")
+    );
+
+    const scriptUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "out", "compiled/EditStandards.js")
+    );
+    const styleMainUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "out", "compiled/EditStandards.css")
     );
     // const cssUri = webview.asWebviewUri(
     //   vscode.Uri.joinPath(this._extensionUri, "out", "compiled/swiper.css")
@@ -154,7 +173,10 @@ export class HelloWorldPanel {
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="${stylesResetUri}" rel="stylesheet">
         <link href="${stylesMainUri}" rel="stylesheet">
+        <link href="${styleMainUri}" rel="stylesheet">
         <script nonce="${nonce}">
+          const apiBaseUrl = ${JSON.stringify(apiBaseUrl)};
+          const tsvscode = acquireVsCodeApi();
         </script>
 			</head>
       <body>

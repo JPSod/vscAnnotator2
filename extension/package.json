@@ -28,25 +28,13 @@
           "name": "Scanner",
           "icon": "media/sideSymbol.svg",
           "contextualTitle": "vscribe"
-        },
-        {
-          "type": "webview",
-          "id": "vscribe-sidebar-standards",
-          "name": "Standards",
-          "icon": "media/sideSymbol.svg",
-          "contextualTitle": "vscribe"
         }
       ]
     },
     "commands": [
       {
-        "command": "vscribe.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "vscribe.askQuestion",
-        "category": "vscribe",
-        "title": "Ask Question"
+        "command": "vscribe.editStandards",
+        "title": "Edit Standards"
       },
       {
         "command": "vscribe.scanFile",

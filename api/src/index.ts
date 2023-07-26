@@ -1,7 +1,7 @@
 import express from "express";
 import "reflect-metadata";
 require('dotenv').config();
-import { DataSource } from "typeorm";
+import { DataSource, In } from "typeorm";
 import { User } from "./entities/User";
 import { __prod__ } from "./constants";
 import { join } from "path";
@@ -12,6 +12,8 @@ import session from "express-session";
 import cors from "cors";
 import { Scan } from "./entities/Scan";
 import { isAuth } from "./isAuth";
+import { Standard } from "./entities/Standard";
+import { analyzeCompliance } from "../modules/scanAnalyzer";
 
 export const conn = new DataSource({
   type: "postgres",
@@ -98,35 +100,114 @@ const main = async () => {
       }
     );
 
-  app.get("/scans", async (req: any, res) => {
-    const scans = await Scan.find({where: {creatorId: req.userId}, order: {id: "DESC"}});
-    res.send({ scans });
-  });
+    app.get("/scans", async (req: any, res) => {
+      try {
+        // Fetch scans based on the creatorId
+        const scans = await Scan.find({
+          where: { creatorId: req.userId },
+          order: { id: "DESC" },
+        });
+    
+        // Extract all unique standardIds from the scans
+        const standardIds = scans.map((scan) => scan.standardId);
+    
+        // Fetch associated standards using the standardIds
+        const standards = await conn.getRepository(Standard).findBy({ id: In(standardIds) });
+    
+        // Create a map of standardId to the standard name for easy lookup
+        const standardNameMap = new Map();
+        standards.forEach((standard: { id: any; standard: any; }) => {
+          standardNameMap.set(standard.id, standard.standard);
+        });
+    
+        // Update the scans with the associated standard names
+        scans.forEach((scan) => {
+          scan.standardName = standardNameMap.get(scan.standardId);
+        });
+    
+        // Return the updated scans with the associated standard names
+        res.send({ scans });
+      } catch (error) {
+        console.error("Error fetching scans:", error);
+        res.status(500).send({ error: "Error fetching scans" });
+      }
+    });
 
 
   app.post("/scans", isAuth, async (req: any, res) => {
 
-    // some tests to see if valid scan
-    if (req.body.value.length > 50000) {
-      res.status(400).json({ error: "Text too long" });
-      return;
+    try {
+      // some tests to see if valid scan
+      if (req.body.value.length > 50000) {
+        res.status(400).json({ error: "Text too long" });
+        return;
+      }
+
+      //use axios to get the standard from database
+      const standard = await Standard.findOneBy({id: req.body.standardId});
+
+      // Check if standard exists
+      if (!standard) {
+        res.status(400).json({ error: "Standard not found" });
+        return;
+      }
+
+      // Import the analyzeCompliance function from the compliance module
+      const pythonCode = req.body.value;
+      const rules = standard.content;
+  
+      // Analyze the compliance using the imported function
+      const complianceScore = await analyzeCompliance(pythonCode, rules);
+
+      const scan = Scan.create({
+        standardId: req.body.standardId,
+        value: 0.5,
+        file: req.body.file,
+        creatorId: req.userId,
+      }); 
+
+      await scan.save();
+
+      res.send({ scan });
+
+    } catch (err) {
+      console.log(err);
+      res.status(400).json({ error: "Something went wrong" });
     }
 
-    //use axios to get the standard from database
+  });
 
-    // send stuff to flask server and get back value
-    req.body.value = 0.5;
+  app.get("/standards", async (req: any, res) => {
+    // this desperately needs to be secured
+    const standards = await Standard.find({where: {creatorId: req.userId}, order: {id: "DESC"}});
+    res.send({ standards });
+  });
 
-    const scan = Scan.create({
-      standard: req.body.standard,
-      value: req.body.value,
-      file: req.body.file,
-      creatorId: req.userId,
-    }); 
-    
-    await scan.save();
-    
-    res.send({ scan });
+
+  app.post("/standards", isAuth, async (req: any, res) => {
+
+    try {
+      // some tests to see if valid scan
+      if (req.body.content.length > 50000) {
+        res.status(400).json({ error: "Text too long" });
+        return;
+      }
+
+      //use axios to get the standard from database
+
+      const standard = Standard.create({
+        standard: req.body.standard,
+        content: req.body.content,
+        creatorId: req.userId,
+      }); 
+
+      await standard.save();
+
+      res.send({ standard });
+    } catch (err) {
+      console.log(err);
+      res.status(400).json({ error: "Something went wrong" });
+    }
 
   });
 
