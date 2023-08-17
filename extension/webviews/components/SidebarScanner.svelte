@@ -1,12 +1,16 @@
 
 <script lang="js">
     import { onMount } from "svelte";
-    import { derived, writable } from "svelte/store";
+    import { writable } from "svelte/store";
+    import { loadScript } from "@paypal/paypal-js";
 
+    const sdkURL = "https://www.paypal.com/sdk/js?client-id=test";
+    console.log(nonce)
+    let paypal;
     let accessToken = ''
     let loading = true;
+
     let user = null;
-    let data = null;
     let searchTerm = '';
     let scans = [];
     const displayedScansStore = writable([]);
@@ -14,6 +18,8 @@
     let options = [];
     let selectedStandard = 'Please select a Standard'
     let selectedStandardId = null;
+    let expandedCardId = null;
+    let filteredScans = [];
 
     let showDropdown = false;
 
@@ -44,7 +50,7 @@
   
     function handleClick() {
       if (options.length == 0) {
-        tsvscode.postMessage({ type: 'onInfo', data: 'Please add a standard to perform a scan!' })
+        tsvscode.postMessage({ type: 'onInfo', value: 'Please add a standard to perform a scan!' })
         return;
       }
 
@@ -81,7 +87,7 @@
     }
 
     function filterScans() {
-      const filteredScans = scans.filter((scan) => {
+      filteredScans = scans.filter((scan) => {
         const formattedDate = formatDate(scan.createdDate);
         const formattedTime = formatTime(scan.createdDate);
         const fileName = extractFileName(scan.file);
@@ -153,6 +159,39 @@
       tsvscode.postMessage({ type: 'editStandards', accessToken: accessToken });
     };
 
+    function expandCard(cardId) {
+      expandedCardId = expandedCardId === cardId ? null : cardId;
+    }
+
+    async function sendScan(cardId, email) {
+      try {
+        const sendButton = document.getElementById('send-button');
+        sendButton.disabled = true;
+      
+        const response = await fetch(`${apiBaseUrl}/email-scans`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ scanId: cardId, email: email }),
+        });
+      
+        if (response.status == 200) {
+          console.log('Scan sent successfully!');
+          tsvscode.postMessage({ type: 'onInfo', value: 'Scan sent successfully!' });
+        } else {
+          const errorMessage = response.statusText || 'Something went wrong - scan failed to send!';
+          tsvscode.postMessage({ type: 'onError', value: errorMessage });
+        }
+      } catch (error) {
+        console.error(error);
+        tsvscode.postMessage({ type: 'onError', value: 'An error occurred while sending the scan!' });
+      } finally {
+        sendButton.disabled = false;
+      }
+    }
+
     onMount(async () => {
 
       window.addEventListener('message', async event => {
@@ -202,9 +241,26 @@
       if (options.length == 0) {
         selectedStandard = 'Please add a Standard!';
       }
-      
-    });
-    
+
+      // Load the PayPal SDK
+      //try {
+      //  paypal = await loadScript({ clientId: "test", dataCspNonce: nonce});
+      //} catch (error) {
+      //    console.error("failed to load the PayPal JS SDK script", error);
+      //}
+//
+      //setTimeout(() => {
+      //  if (paypal) {
+      //    try {
+      //      paypal.Buttons().render("#paypal-button-container");
+      //    } catch (error) {
+      //      console.error("Failed to render the PayPal Buttons", error);
+      //    }
+      //  }
+      //}, 1000); 
+
+  });
+
   </script>
 
   {#if loading}
@@ -214,7 +270,7 @@
   {:else}
     <div style="margin-top: 0.5cm;">Hello <strong>{user.name}!</strong></div>
     <button on:click={handleLogout}>Logout</button>
-
+    <!-- svelte-ignore missing-declaration -->
     <main>
       <div style="margin-bottom: 1rem;">
           <p>Please choose which scan you would like to perform:</p>
@@ -262,7 +318,7 @@
           <strong>Previous Scans:</strong>
         </div>
 
-        <div style="margin-top: 1rem; margin-bottom: 1rem;">
+        <div style="margin-top: 1rem;">
           <form on:submit={handleFormSubmit}>
             <input
               type="text"
@@ -275,7 +331,7 @@
         </div>
 
         {#each displayedScans as scan}
-          <div class="scan-card">
+          <div class="scan-card" style="margin-top: 1rem;" on:click={() => expandCard(scan.id)}>
             <div>
               <p class="heading">Standard: {scan.standardName}</p>
               <p class="heading">Date: {formatDate(scan.createdDate)}</p>
@@ -287,11 +343,14 @@
               <p class="value-number">{scan.value}</p>
             </div>
           </div>
-          <button style="margin-bottom: 1rem;"> Send Scan</button>
+          {#if expandedCardId === scan.id}
+            <input type="email" placeholder="Enter email" bind:value={scan.email} />
+            <button id="send-button" on:click={() => sendScan(scan.id, scan.email)}>Send Scan</button>
+          {/if}
         {/each}
       </div>
   
-      <div class="pagination">
+      <div class="pagination" style="margin-bottom: 1rem;">
         {#if hasPreviousPage}
           <button on:click={PreviousPage}>Previous</button>
         {/if}
@@ -300,7 +359,13 @@
         {/if}
 
       </div>
-  
+      <div id="paypal-button-container"></div>
+      <!-- svelte-ignore missing-declaration -->
+      <script nonce="${nonce}" src="${sdkURL}" data-csp-nonce="${nonce}"></script>
+      <!-- svelte-ignore missing-declaration -->
+      <script nonce="${nonce}">
+                paypal.Buttons().render('#paypal-button-container');
+      </script>
     </main>
   
     <style>

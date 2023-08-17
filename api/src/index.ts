@@ -13,6 +13,7 @@ import cors from "cors";
 import { Scan } from "./entities/Scan";
 import { isAuth } from "./isAuth";
 import { Standard } from "./entities/Standard";
+import nodemailer from "nodemailer";
 import { analyzeCompliance } from "../modules/scanAnalyzer";
 
 export const conn = new DataSource({
@@ -24,6 +25,10 @@ export const conn = new DataSource({
   logging: !__prod__,
   synchronize: !__prod__,
   })
+
+const environment = process.env.PAYPAL_ENVIRONMENT || "sandbox";
+
+const paypalBaseURL = environment === "sandbox" ? "https://api-m.sandbox.paypal.com" : "https://api-m.paypal.com";
 
 const main = async () => {
 
@@ -161,7 +166,8 @@ const main = async () => {
 
       const scan = Scan.create({
         standardId: req.body.standardId,
-        value: 0.5,
+        value: complianceScore.compliancePercentage,
+        failedFunctions: complianceScore.failedFunctions,
         file: req.body.file,
         creatorId: req.userId,
       }); 
@@ -211,6 +217,105 @@ const main = async () => {
 
   });
 
+  app.post("/update-standard", isAuth, async (req: any, res) => {
+
+    try {
+      // some tests to see if valid scan
+      if (req.body.content.length > 50000) {
+        res.status(400).json({ error: "Text too long" });
+        return;
+      }
+
+     // Use axios to get the standard from the database based on id
+     const existingStandard = await Standard.findOne({ where: { id: req.body.id } });
+
+     if (!existingStandard) {
+       res.status(404).json({ error: "Standard not found" });
+       return;
+     }
+
+     // Update the properties of the existing standard
+     existingStandard.id = req.body.id;
+     existingStandard.standard = req.body.standard;
+     existingStandard.content = req.body.content;
+     existingStandard.creatorId = req.userId;
+
+     // Save the updated standard
+     await existingStandard.save();
+
+     res.send({ standard: existingStandard });
+
+    } catch (err) {
+      console.log(err);
+      res.status(400).json({ error: "Something went wrong" });
+    }
+
+  });
+
+  app.post("/email-scans", isAuth, async (req, res) => {
+    try {
+      const { scanId, email } = req.body;
+  
+      // Send the scanId and email in the email body
+
+      const selectedScan = await Scan.findOne({
+        where: { id: req.body.id },
+        relations: ['origin'], // Load the 'origin' relationship
+      });
+      
+      if (!selectedScan) {
+        res.status(404).json({ error: "Standard not found" });
+        return;
+      }
+      
+      // Assuming 'origin' is an instance of Standard entity
+      const standardName = (await selectedScan.origin)?.standard; // Change 'name' to the actual property name in Standard entity
+      
+      const emailContent = `Scan ID: ${selectedScan.id}\nStandard: ${standardName}\nValue: ${selectedScan.value}\nFile: ${selectedScan.file}\nCreated Date: ${selectedScan.createdDate}`;      
+
+      // Configure Nodemailer transporter (SMTP settings)
+      const transporter = nodemailer.createTransport({
+        service: 'Gmail', // e.g., 'Gmail', 'Outlook'
+        auth: {
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_PASS,
+        },
+      });
+  
+      // Define email options
+      const mailOptions = {
+        from: 'your-email@example.com',
+        to: email,
+        subject: `Scan Information: Scan ID: ${scanId}`,
+        text: emailContent,
+      };
+  
+      // Send the email
+      await transporter.sendMail(mailOptions);
+  
+      // Respond with a success status
+      return res.status(200).json({ status: 200, message: 'Scan sent successfully via email!' });
+    } catch (error) {
+      console.error(error);
+      // Respond with an error status
+      return res.status(500).json({ status: 500, message: 'Something went wrong - scan failed to send!' });
+    }
+  });
+
+  // create a new order
+  app.post("/create-paypal-order", async (_req, res) => {
+    const order = await createOrder();
+    res.json(order);
+  });
+
+  // capture payment & store order information or fullfill order
+  app.post("/capture-paypal-order", async (req, res) => {
+    const { orderID } = req.body;
+    const captureData = await capturePayment(orderID);
+    // TODO: store payment information such as the transaction ID
+    res.json(captureData);
+  });
+
   app.get("/me", async (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -257,3 +362,62 @@ const main = async () => {
 };
 
 main();
+
+//////////////////////
+// PayPal API helpers
+//////////////////////
+
+// use the orders api to create an order
+async function createOrder() {
+  const accessToken = await generateAccessToken();
+  const url = `${paypalBaseURL}/v2/checkout/orders`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      intent: "CAPTURE",
+      purchase_units: [
+        {
+          amount: {
+            currency_code: "GBP",
+            value: "5.00",
+          },
+        },
+      ],
+    }),
+  });
+  const data = await response.json();
+  return data;
+}
+
+// use the orders api to capture payment for an order
+async function capturePayment(orderId: any) {
+  const accessToken = await generateAccessToken();
+  const url = `${paypalBaseURL}/v2/checkout/orders/${orderId}/capture`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  const data = await response.json();
+  return data;
+}
+
+// generate an access token using client id and app secret
+async function generateAccessToken() {
+  const auth = Buffer.from(process.env.PAYPAL_CLIENT_ID + ":" + process.env.PAYPAL_CLIENT_SECRET).toString("base64")
+  const response = await fetch(`${paypalBaseURL}/v1/oauth2/token`, {
+    method: "POST",
+    body: "grant_type=client_credentials",
+    headers: {
+      Authorization: `Basic ${auth}`,
+    },
+  });
+  const data = await response.json();
+  return data.access_token;
+}

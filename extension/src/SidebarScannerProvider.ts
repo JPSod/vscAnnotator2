@@ -47,6 +47,13 @@ export class SidebarScannerProvider implements vscode.WebviewViewProvider {
           vscode.window.showInformationMessage(data.value);
           break;
         }
+        case "onError": {
+          if (!data.value) {
+            return;
+          }
+          vscode.window.showErrorMessage(data.value);
+          break;
+        }
         case "onScan": {
           await callScanFileCommand(data.standardId, data.accessToken);
           break;
@@ -107,7 +114,7 @@ export class SidebarScannerProvider implements vscode.WebviewViewProvider {
 					Use a content security policy to only allow loading images from https or from our extension directory,
 					and only allow scripts that have a specific nonce.
         -->
-        <meta http-equiv="Content-Security-Policy" content="img-src https: data:; style-src 'unsafe-inline' ${webview.cspSource}; script-src 'nonce-${nonce}';">
+        <meta http-equiv="Content-Security-Policy" content="img-src https: data:; style-src 'unsafe-inline' ${webview.cspSource}; script-src 'nonce-${nonce}' https://www.paypal.com; child-src 'self' https://www.sandbox.paypal.com/;">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<link href="${styleResetUri}" rel="stylesheet">
 				<link href="${styleVSCodeUri}" rel="stylesheet">
@@ -115,6 +122,8 @@ export class SidebarScannerProvider implements vscode.WebviewViewProvider {
         <script nonce="${nonce}">
           const apiBaseUrl = ${JSON.stringify(apiBaseUrl)};
           const tsvscode = acquireVsCodeApi();
+          const nonce="${nonce}"
+          console.log("${nonce}")
         </script>
 			</head>
       <body>

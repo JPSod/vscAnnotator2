@@ -6,5 +6,6 @@ declare global {
   };
   const apiBaseUrl: string;
   const accessToken: string;
+  const nonce: string;
 
 }

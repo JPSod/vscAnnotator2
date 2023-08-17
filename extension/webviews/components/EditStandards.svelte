@@ -2,11 +2,14 @@
     import { onMount, onDestroy } from 'svelte';
   
     let standards = [];
+    let numstandards = 0;
     let selectedStandard = {
       standard: '',
       content: '',
     };
     let accessToken = '';
+    let user = {};
+    let loading = true;
   
     async function fetchStandards() {
       const response = await fetch(`${apiBaseUrl}/standards`, {
@@ -19,6 +22,11 @@
       console.log(payload);
       // Check if payload.standards is an array or not
       standards = Array.isArray(payload.standards) ? payload.standards : [];
+
+      numstandards = standards.length;
+      selectedStandard = standards[0];
+      standards.sort((a, b) => (a.id > b.id) ? 1 : (a.id < b.id ) ? -1 : 0);
+      
     }
   
     onMount(() => {
@@ -36,6 +44,7 @@
                 });
             
                 const data = await response.json();
+                console.log(data);
                 user = data.user;
                 loading = false;
                 break;
@@ -55,29 +64,37 @@
       selectedStandard = standard;
     }
 
-    function checkNameUniqueness(name) {
+    function checkNameUniqueness(name, id) {
+      let isNameUnique = true;
       // Convert the name to lowercase for case-insensitive comparison
       const lowerCaseName = name.toLowerCase();
-      console.log(lowerCaseName);
+      console.log(id);
 
-      // Check if any existing standard in the 'standards' array has the same name
-      console.log(standards);
-      const isNameUnique = standards.every((standard) => {
-        let test1 = standard != selectedStandard;
-        let test2 = standard.standard.toLowerCase() != lowerCaseName;
-        return test1 === test2;
-      });
+      for (const standard of standards) {
+        // If the name id is equal, skip it
+        if (standard.id === id) continue;
+
+        // If the name is the same as any other standard, return false
+        if (standard.standard.toLowerCase() === lowerCaseName) {
+          isNameUnique = false;
+        }
+      }
+
+      if (numstandards == 0) {
+        isNameUnique = true;
+      }
 
       return isNameUnique;
     }
   
     async function updateStandard() {
-        console.log(`updateStandard() called`)
+        console.log(selectedStandard)
       if (!selectedStandard) return;
 
       const isNewStandard = !selectedStandard.id;
+      
+      let isNameUnique = checkNameUniqueness(selectedStandard.standard, selectedStandard.id);
 
-      const isNameUnique = checkNameUniqueness(selectedStandard.standard);
       if (!isNameUnique) {
         console.log(`updateStandard() called non-unique name`)
         tsvscode.postMessage({ type: 'onError', value: 'Standard name must be unique!' })
@@ -106,6 +123,11 @@
           tsvscode.postMessage({ type: 'onError', value: payload.error })
           return;
         }
+
+        if (!isNewStandard){tsvscode.postMessage({ type: 'onInfo', value: 'Changes saved succesfully!' })} else {tsvscode.postMessage({ type: 'onInfo', value: 'Standard added succesfully!' })}
+
+        return payload;
+        
     }
   
     function addNewStandard() {
@@ -115,12 +137,19 @@
         content: '',
       };
       standards.push(newStandard);
-    
+      
       // Automatically select the newly added standard
       selectedStandard = newStandard;
+
+      updateStandard();
+
     }
   </script>
-  
+  {#if loading}
+    <div>Loading...</div>
+  {:else if !user}
+  <div>Something went wrong - no user found!</div>
+  {:else}
   <div class="container">
     <div class="left-column">
       {#each standards as standard}
@@ -149,6 +178,7 @@
       {/if}
     </div>
   </div>
+  {/if}
 
   <style>
     .container {
