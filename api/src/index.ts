@@ -121,7 +121,7 @@ const main = async () => {
     
         // Create a map of standardId to the standard name for easy lookup
         const standardNameMap = new Map();
-        standards.forEach((standard: { id: any; standard: any; }) => {
+        standards.forEach((standard: { id: number; standard: string; }) => {
           standardNameMap.set(standard.id, standard.standard);
         });
     
@@ -271,7 +271,7 @@ const main = async () => {
       // Assuming 'origin' is an instance of Standard entity
       const standardName = (await selectedScan.origin)?.standard; // Change 'name' to the actual property name in Standard entity
       
-      const emailContent = `Scan ID: ${selectedScan.id}\nStandard: ${standardName}\nValue: ${selectedScan.value}\nFile: ${selectedScan.file}\nCreated Date: ${selectedScan.createdDate}`;      
+      const emailContent = `Scan ID: ${selectedScan.id}\nStandard: ${standardName}\nValue: ${selectedScan.value}\nFile: ${selectedScan.file}\nFailed Functions: ${selectedScan.failedFunctions}\nCreated Date: ${selectedScan.createdDate}`;      
 
       // Configure Nodemailer transporter (SMTP settings)
       const transporter = nodemailer.createTransport({

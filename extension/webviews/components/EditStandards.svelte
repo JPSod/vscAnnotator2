@@ -165,7 +165,7 @@
       {/if}
     </div>
     <div class="right-column">
-      {#if selectedStandard && selectedStandard.standard !== ''}
+      {#if selectedStandard}
         <div>
           <input type="text" bind:value="{selectedStandard.standard}" />
         </div>
