@@ -1,12 +1,6 @@
 // @ts-ignore
-import { AutoTokenizer, BertForSequenceClassification } from 'transformers';
+import { AutoTokenizer, BertForSequenceClassification } from '@xenova/transformers';
 import { getRulesFromText } from './getRulesFromText';
-
-// Load the tokenizer and model
-const tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
-
-// Binary classification model, pass rule or not. 1 = pass, 0 = fail.
-const model = BertForSequenceClassification.fromPretrained('microsoft/codebert-base', { num_labels: 1 });
 
 function preprocess(text: string): string {
   // Convert to lowercase for consistent processing
@@ -14,6 +8,12 @@ function preprocess(text: string): string {
 }
 
 async function analyzeCompliance(pythonCode: string, rulestext: string) {
+  // Load the tokenizer and model
+  const tokenizer = await AutoTokenizer.from_pretrained("microsoft/codebert-base")
+
+  // Binary classification model, pass rule or not. 1 = pass, 0 = fail.
+  const model = await BertForSequenceClassification.from_pretrained('microsoft/codebert-base');
+
   // Call another function to get the rules from text
   const rules = await getRulesFromText(rulestext);
   const complianceThreshold = 0.5;
@@ -33,10 +33,10 @@ async function analyzeCompliance(pythonCode: string, rulestext: string) {
     for (const segment of pythonCodeSegments) {
       const preprocessedCode = preprocess(segment);
       const concatenatedInput = `${preprocessedRule} [SEP] ${preprocessedCode}`;
-      const inputTokens = tokenizer.encode(concatenatedInput, { addSpecialTokens: true });
+      const inputTokens = tokenizer.encode(concatenatedInput, { padding: true, truncation: true, max_length: 512 });
 
        // Find the index of the [SEP] token
-      const sepTokenIndex = inputTokens.indexOf(tokenizer.sepTokenId);
+      const sepTokenIndex = inputTokens.indexOf(tokenizer.sep_token_id);
 
       // Calculate total tokens including special tokens
       const totalTokens = inputTokens.length;
@@ -59,11 +59,11 @@ async function analyzeCompliance(pythonCode: string, rulestext: string) {
       // Perform padding if needed (padding will only be added if tokens were removed)
       if (inputTokens.length < maxTokenLimit) {
         const paddingTokens = maxTokenLimit - inputTokens.length;
-        inputTokens.push(...Array(paddingTokens).fill(tokenizer.padTokenId));
+        inputTokens.push(...Array(paddingTokens).fill(tokenizer.pad_token_id));
       }
 
       // Run the model for the current segment and the current rule
-      const modelOutput = await model.predict([inputTokens]);
+      const modelOutput = await (model as any).predict([inputTokens]);
       const probabilityScore = 1 / (1 + Math.exp(-modelOutput[0]));
 
       // Process the model output as needed

@@ -53,22 +53,6 @@ export function activate(context: vscode.ExtensionContext) {
 
         const text = editor.document.getText();
 
-        //const strings: string[] = [];
-
-        //// Regular expression to match strings in Python
-        //const regex = /(['"])(?:(?=(\\?))\2.)*?\1/g;
-
-        //let match;
-        //while ((match = regex.exec(text))) {
-        //    const string = match[0];
-        //    strings.push(string);
-        //}
-
-        //const numStrings = strings.length;
-
-        //vscode.window.showInformationMessage(`Number of strings: ${numStrings}`);
-        //vscode.window.showInformationMessage(`Strings: ${strings.join(', ')}`);
-        
         await axios.post(`${apiBaseUrl}/scans`, {
           standardId: standardId,
           value: text,

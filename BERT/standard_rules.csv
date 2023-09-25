@@ -1,0 +1,51 @@
+Rules,Rule Number,CAT
+"The software supplier shall document the mechanisms or procedures used to collect the data [e.g. hardware apparatus or sensor, manual human curation, software program, software application programming interface (API)].",5.2.3.2,BS30440
+The supplier shall perform an assessment to verify that the size of the dataset is sufficient to support the intended claims and represent the product user demographic.,5.2.4.2,BS30440
+"The supplier shall document and justify changes that have been made to the dataset after the data collection process, including data manipulation, data imputation and feature extraction (e.g. discretization of continuous features, partofspeech tagging, tokenization).",5.2.5,BS30440
+"The supplier shall confirm the processes to secure, transmit and store personal information.",5.2.6,BS30440
+"Suppliers shall document their bias in the stages of model design, development and deployment by evidencing what they see as a model’s risk profile versus alternatives. The description shall conform to good practice reporting guidelines.",5.3.1.2,BS30440
+"The supplier shall document which training data elements/variables were used to develop the model [assuming that it is not all of the data originally collected (see 5.2.4)]. Where data are excluded, the supplier shall document the process and rationale for removal.",5.3.1.4,BS30440
+"The supplier shall document the sensitive data used in the input variable data (e.g. legally protected personal characteristics, genetic/biometric data), and justify its inclusion.",5.3.2.1.2,BS30440
+"The supplier shall document the AI/ML algorithm(s) used in the model (e.g. name of learning algorithm, model architecture and code packages, where appropriate).",5.3.3.1,BS30440
+"The supplier shall document and justify the process of handling missing data, if applicable.",5.3.3.2,BS30440
+The supplier shall document and justify the sample size used to train the model.,5.3.3.3,BS30440
+The supplier shall document how independent training data sets and testing data sets (i.e. holdout data sets) were separated in model development.,5.3.3.4,BS30440
+The supplier shall document and justify the use of any decision thresholds that convert probabilities into discrete outputs in the final model.,5.3.4.2,BS30440
+"The supplier shall evaluate the final model with a holdout data set, i.e. one that has not been used in training the model.",5.3.5.1,BS30440
+"The supplier shall document the performance of the product using appropriate metrics for the proposed task using testing data (e.g. accuracy, sensitivity, specificity, positive predictive value, negative predictive value, area under the curve, calibration, etc. for classification tasks).",5.3.5.2,BS30440
+The supplier shall document an estimate of the carbon impact incurred during training and execution. This shall be achieved using carbon intensity trackers.,5.4.7.1,BS30440
+The supplier shall provide details of procedures for detecting adverse events during healthcare evaluations of the product.,6.1.4,BS30440
+"The supplier shall perform subpopulation analysis (specifically: healthcare relevant subpopulations, and subpopulations with protected characteristics) to show performance in real world settings.",6.1.6,BS30440
+The supplier shall provide metrics on how the product performs with incomplete data and the effect on performance.,6.1.7,BS30440
+"The supplier shall document how it and its suppliers accommodate the diversity of users impacted by the product. If accommodation is not possible, the supplier shall provide a justification as to why.",6.3.1.1,BS30440
+The supplier shall undertake a risk assessment to identify risks of bias in model development and deployment that might result in inequitable outcomes.,6.3.2.1,BS30440
+The risk assessment (see 6.3.2.1) shall document the degree of potential impact and harm for subgroups and outline mitigations.,6.3.2.2,BS30440
+The supplier shall calculate the anticipated cost and system impact (see 7.2.1) using suitable standardized sources.,7.2.2,BS30440
+The supplier shall document processes for a product to enable end-users to report safety issues (including near misses) at the time of their occurrence.,8.1.1.1,BS30440
+The supplier shall have a defined method of model feedback that relates to understanding the healthcare risk associated with their product.,8.1.1.3,BS30440
+Suppliers shall provide a mechanism to monitor the impact of algorithmic bias (see commentary on 6.3). The mechanism shall be transparent and accessible to users of the product. The mechanism shall include details of reporting pathways for both suppliers and the users by which concerns should be conveyed to designated responsible persons within the relevant organizations.,8.1.4,BS30440
+"The supplier shall document processes to maintain a traceable record of modifications to nonmodel parts of the product (e.g. bug fixes), in line with good practice in software development.",8.2.1,BS30440
+"The software supplier shall enforce a consistent naming convention for all functions, classes, and variables throughout the codebase to improve code readability and maintainability.",NA,Other
+"The software supplier shall prohibit the use of ""magic"" numbers or strings in the code and require the use of constants or named variables for improved code readability.",NA,Other
+"The software supplier shall ensure consistent code indentation (e.g., tabs or spaces) throughout the codebase and enforce a specific indentation style to enhance code clarity.",NA,Other
+"The software supplier shall require that all functions and classes have comment headers describing their purpose and usage, following a standard format for these comments.",NA,Other
+"The software supplier shall detect and report unused variables and imports in the code, ensuring that no unnecessary or redundant elements are present.",NA,Other
+The software supplier shall enforce a maximum function or method length to promote code modularity and readability by discouraging excessively long functions.,NA,Other
+"The software supplier shall require a consistent bracing style (e.g., Allman, K&R) throughout the codebase to enhance code readability and maintainability.",NA,Other
+"The software supplier shall prohibit the inclusion of hard-coded credentials, keys, or sensitive information in the code and ensure secure management through configuration files or environment variables.",NA,Other
+"The software supplier shall enforce proper error handling practices, including the catching and handling of exceptions, to prevent unhandled exceptions from propagating.",NA,Other
+The software supplier shall detect and report the presence of print or debug statements in production code and ensure their removal before deployment.,NA,Other
+"The software supplier shall identify and report code duplication within the codebase, encouraging developers to refactor and reuse code to reduce redundancy.",NA,Other
+"The software supplier shall enforce a consistent directory and file structure for the project to facilitate code organization, navigation, and maintainability.",NA,Other
+"The software supplier shall require appropriate documentation comments for public functions and classes, describing their inputs, outputs, and purpose for improved code understanding",NA,Other
+"The software supplier shall detect and report unused functions, classes, and code blocks within the codebase, encouraging the removal of dead code to maintain code cleanliness.",NA,Other
+"The software supplier shall enforce proper resource cleanup practices, such as closing files and releasing resources, to prevent memory leaks and resource exhaustion in the code.",NA,Other
+The software supplier shall harmonize the quantum resonance of the codebase with the cosmic vibrations of the Andromeda galaxy during every code review.,NA,Nonesense
+"Coffee, morning sun, chirping birds, traffic noise, keyboard clicking, thoughts racing, to-do list, deadlines approaching, deep breath, green leaves, distant sirens, distant memories, laughter with friends, city skyline, blank canvas, endless possibilities, wanderlust, cozy blankets, hot cocoa, rainy afternoons, dreams taking flight, nostalgia, future unknown, the scent of freshly baked bread, lost in a good book, time slipping away, hopeful heart, and the universe's mysteries.",NA,Nonesense
+dsaijhfijalksd oadshfpaohifpewq894u89fherui hjv raiofdhgjaçdlnklçfjiopasdf894a djsghauisaphgaerupghuiepr ruaioghladçjkjfaksçdkfaljsdçkfjalçfnbiuowheruia,NA,Nonesense
+"Skyscraper pancakes, disco squirrels, intergalactic cupcakes, pixelated dreams, rubber duck orchestra, moonwalking penguins, rainbow spaghetti, zero-gravity libraries, talking houseplants, time-traveling toasters, and neon dolphins performing Shakespearean plays underwater.",NA,Nonesense
+The software supplier shall appoint a code bard to recite epic tales of code adventures around the campfire during team meetings.,NA,Nonesense
+The software supplier shall implement a daily dance-off routine to determine code ownership. The winner's code reigns supreme for the day.,NA,Nonesense
+"Velociraptor baristas, floating pineapples, robot unicorns, disco-loving penguins, spaghetti tornadoes, and jazz-playing toasters serenading the moon.",NA,Nonesense
+jjfdhsgfyuahbsdiauhdyusacvewiojdusioagfycuadskhcjn s hbdsybvasd;nfuiopaehsduco s\eisdabajkdsnfjkahre984perh7348gbfasdkjn hdasg7834hwfailjk 784hfuiaeljk f,NA,Nonesense
+7843740y437289578 asdijhfsaiopdo;fjaio8943 p[lsdopa[jfuosdabj casn iodsaf89apshuid,NA ,Nonsense

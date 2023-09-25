@@ -3,5 +3,6 @@ dist
 node_modules
 .vscode-test/
 EXT
+VSSCRIBE
 *.vsix
 api/.env.example

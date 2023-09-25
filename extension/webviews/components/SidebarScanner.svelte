@@ -243,21 +243,21 @@
       }
 
       // Load the PayPal SDK
-      //try {
-      //  paypal = await loadScript({ clientId: "test", dataCspNonce: nonce});
-      //} catch (error) {
-      //    console.error("failed to load the PayPal JS SDK script", error);
-      //}
-//
-      //setTimeout(() => {
-      //  if (paypal) {
-      //    try {
-      //      paypal.Buttons().render("#paypal-button-container");
-      //    } catch (error) {
-      //      console.error("Failed to render the PayPal Buttons", error);
-      //    }
-      //  }
-      //}, 1000); 
+      try {
+        paypal = await loadScript({ clientId: "test", dataCspNonce: nonce});
+      } catch (error) {
+          console.error("failed to load the PayPal JS SDK script", error);
+      }
+
+      setTimeout(() => {
+        if (paypal) {
+          try {
+            paypal.Buttons().render("#paypal-button-container");
+          } catch (error) {
+            console.error("Failed to render the PayPal Buttons", error);
+          }
+        }
+      }, 1000); 
 
   });
 

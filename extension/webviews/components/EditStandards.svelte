@@ -175,6 +175,7 @@
         <div>
           <button on:click="{updateStandard}">Save Changes</button>
         </div>
+        <div> Please format the standards as so: <br> <br> <code>1. Rule 1 <br> 2. Rule 2 <br> 3. Rule 3</code> </div>
       {/if}
     </div>
   </div>

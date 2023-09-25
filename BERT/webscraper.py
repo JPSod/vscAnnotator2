@@ -5,6 +5,7 @@ import os
 import ast
 
 def search_repositories(query, language, min_stars, num_repositories=100):
+    ''' Send a search query to the GitHub API and return a list of repository names. '''
     base_url = "https://api.github.com/search/repositories"
     headers = {"Accept": "application/vnd.github.v3+json"}
 
@@ -26,6 +27,7 @@ def search_repositories(query, language, min_stars, num_repositories=100):
         return []
 
 def extract_code(repo_name):
+    ''' Send a request to github and download relevant repositories.'''
     url = f"https://github.com/{repo_name}/archive/master.zip"
     response = requests.get(url, stream=True)
     
@@ -44,6 +46,7 @@ def extract_code(repo_name):
 
 
 def parse_files_in_directory(directory_path):
+    ''' Parse all Python files in a directory and return a list of code snippets. '''
     code_snippets = []
     for root, _, files in os.walk(directory_path):
         for file_name in files:
@@ -85,8 +88,9 @@ if __name__ == "__main__":
     query = "healthcare AI"  # The keyword or topic you want to search for
     language = "python"   # The programming language you are interested in
     min_stars = 100      # Minimum stars the repositories should have
+    num_repositories=10 # Number of repositories to scrape
 
-    repositories_to_scrape = search_repositories(query, language, min_stars, num_repositories=5)
+    repositories_to_scrape = search_repositories(query, language, min_stars, num_repositories)
     output_file = "code_snippets.csv"
     
     for repo_url in repositories_to_scrape:
