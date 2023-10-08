@@ -10,14 +10,17 @@ export class Scan extends BaseEntity {
   @Column("float")
     value: number;
 
-  @Column()
-    failedFunctions: string;
-
+  @Column("jsonb") // Use jsonb data type for JSON objects or arrays
+  failedFunctions: object[]; 
+  
   @CreateDateColumn()
     createdDate: Date;
 
   @Column()
     file: string;
+    
+  @Column("boolean", { default: false })
+    archived: boolean;
 
   @Column()
     creatorId: number;

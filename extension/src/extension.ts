@@ -53,19 +53,26 @@ export function activate(context: vscode.ExtensionContext) {
 
         const text = editor.document.getText();
 
-        await axios.post(`${apiBaseUrl}/scans`, {
-          standardId: standardId,
-          value: text,
-          file: editor.document.fileName,
-        }, {
-          headers: {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            'Content-Type': 'application/json',
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        });
+        try {
+          await axios.post(`${apiBaseUrl}/scans`, {
+            standardId: standardId,
+            value: text,
+            file: editor.document.fileName,
+          }, {
+            headers: {
+              // eslint-disable-next-line @typescript-eslint/naming-convention
+              'Content-Type': 'application/json',
+              // eslint-disable-next-line @typescript-eslint/naming-convention
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          });
+          // Resolve the promise with a success message
+          return 'Scan complete';
 
+        } catch (error) {
+          // Reject the promise with an error message
+          throw error;
+      }
     })
   );
 

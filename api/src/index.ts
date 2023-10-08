@@ -15,6 +15,7 @@ import { isAuth } from "./isAuth";
 import { Standard } from "./entities/Standard";
 import nodemailer from "nodemailer";
 import { spawn } from 'child_process';
+import { ComplianceScore, FailedFunction} from "./types/types";
 const path = require('path');
 
 // Initialize a DataSource for TypeORM to connect to PostgreSQL
@@ -28,44 +29,70 @@ export const conn = new DataSource({
   synchronize: !__prod__,
 });
 
+const runPythonScript = (args: string[]): Promise<ComplianceScore> => {
+  return new Promise<ComplianceScore>((resolve, reject) => {
+    // Specify the full path to the Anaconda Python executable
+    const pythonExecutable = 'C:/Users/joaop/anaconda3/python.exe';
+    const condaEnvName = 'MScBERT'; 
+    const pythonWrapperScript = path.join(__dirname, '..', 'modules', 'condaWrapper.py');   
+    const pythonScript = path.join(__dirname, '..', 'modules', 'scanAnalyzer.py');
 
-// Create a function to run the Python script and return a promise
-const runPythonScript = (pythonScript: string, args: any[]) => {
-  return new Promise((resolve, reject) => {
-    const pythonProcess = spawn('python', [pythonScript, ...args]);
+    const pythonArgs = [
+      pythonScript,
+      '--pythonCode', args[0], // Pass the Python code as an argument to the Python script
+      '--rulestext', args[1]  // Pass the standard as an argument to the Python script
+    ];
 
-    let stdoutData = ''; // Variable to capture stdout data
+    // Create a new Python child process with the specified Python executable
+    const pythonProcess = spawn(pythonExecutable, [
+      pythonWrapperScript,
+      condaEnvName,
+      ...pythonArgs
+    ]);
 
-    // Handle standard output data from the Python script
+    let pythonOutput = '';
+    let complianceScore = {
+      compliancePercentage: 0.0,
+      failedFunctions: []
+    };
+
     pythonProcess.stdout.on('data', (data) => {
-      stdoutData += data.toString(); // Accumulate the data
+      pythonOutput += data.toString();
+    
+      // Check if the line contains "output_json ="
+      if (data.includes('output_json =')) {
+        // Extract the output_json line and parse it
+        const lines = pythonOutput.split('\n');
+        for (const line of lines) {
+          if (line.includes('output_json =')) {
+            const outputJsonLine = line.split('output_json =')[1].trim();
+            complianceScore = JSON.parse(outputJsonLine);
+            console.log('Captured JSON:', complianceScore);
+            break;
+          }
+        }
+      }
     });
-
+    
     // Handle standard error data from the Python script
     pythonProcess.stderr.on('data', (data) => {
       console.error(`Python Script Error: ${data}`);
-      reject(new Error(`Python Script Error: ${data}`));
     });
+    
 
-    // Handle the Python script's exit event
     pythonProcess.on('close', (code) => {
       if (code === 0) {
         console.log('Python Script Exited Successfully');
-        try {
-          console.log('stdoutData:', stdoutData);
-          const complianceScore = JSON.parse(stdoutData);
-          resolve(complianceScore); // Resolve with the parsed data
-        } catch (error) {
-          console.error('Error parsing JSON:', error);
-          reject(error);
-        }
+        console.log('Compliance Percentage:', complianceScore.compliancePercentage);
+        console.log('Failed Functions:', complianceScore.failedFunctions);
+        resolve(complianceScore);
       } else {
-        console.error(`Python Script Exited with Error Code ${code}`);
-        reject(new Error(`Python Script Exited with Error Code ${code}`));
+        console.error(`Python Script Exited with Code ${code}`);
+        reject(`Python Script Exited with Code ${code}`);
       }
     });
   });
-};
+}
 
 
 // Determine the PayPal environment (sandbox or production)
@@ -165,7 +192,7 @@ const main = async () => {
     try {
       // Fetch scans based on the creatorId
       const scans = await Scan.find({
-        where: { creatorId: req.userId },
+        where: { creatorId: req.userId, archived: false },
         order: { id: "DESC" },
       });
 
@@ -194,6 +221,24 @@ const main = async () => {
     }
   });
 
+  app.post('/archive-scan/:scanId', isAuth, async (req: any, res) => {
+    try {
+      const { scanId } = req.params as { scanId: string };
+      // You can perform the archive logic here, e.g., updating the scan's archived status in the database
+      // Example: Update the 'archived' field of the scan with the given scanId to true
+      const updatedScan = await Scan.update({ id: parseInt(scanId) }, { archived: true });
+  
+      if (updatedScan) {
+        res.status(200).send({ message: 'Scan archived successfully' });
+      } else {
+        res.status(404).send({ error: 'Scan not found' });
+      }
+    } catch (error) {
+      console.error('Error archiving scan:', error);
+      res.status(500).send({ error: error.message });
+    }
+  });
+
   // Create a new scan
   app.post("/scans", isAuth, async (req: any, res) => {
     try {
@@ -215,13 +260,10 @@ const main = async () => {
       // Import the analyzeCompliance function from the compliance module
       const pythonCode = req.body.value;
       const rules = standard.content;
-
-      // Define the Python script to run and any command-line arguments
-      const pythonScript = path.join(__dirname, '..', 'modules', 'scanAnalyzer.py');
-      const args = [pythonCode, rules];
+      let args = [pythonCode, rules];
 
       // Run the Python script and wait for it to complete
-      const complianceScore:any = await runPythonScript(pythonScript, args);
+      const complianceScore: ComplianceScore = await runPythonScript(args);
 
       // Create a new scan and save it
       const scan = Scan.create({
@@ -334,7 +376,31 @@ const main = async () => {
       // Assuming 'origin' is an instance of Standard entity
       const standardName = (await selectedScan.origin)?.standard; // Change 'name' to the actual property name in Standard entity
 
-      const emailContent = `Scan ID: ${selectedScan.id}\nStandard: ${standardName}\nValue: ${selectedScan.value}\nFile: ${selectedScan.file}\nFailed Functions: ${selectedScan.failedFunctions}\nCreated Date: ${selectedScan.createdDate}`;      
+      const failedFunctions: FailedFunction[] = selectedScan.failedFunctions as FailedFunction[];
+
+      const formattedFailedFunctions = failedFunctions.map((failedFunction) => {
+        return `
+          <li>
+            <p><strong>Rule:</strong> ${failedFunction['Rule']}</p>
+            <p><strong>Function/Class:</strong></p>
+            <pre><code>${failedFunction['Function/Class']}</code></pre>
+          </li>
+        `;
+      });
+
+      // Update the email content
+      const emailContent = `
+        <h1>Scan Information</h1>
+        <p><strong>Scan ID:</strong> ${selectedScan.id}</p>
+        <p><strong>Standard:</strong> ${standardName}</p>
+        <p><strong>Compliance Percentage:</strong> ${selectedScan.value}</p>
+        <p><strong>File:</strong> ${selectedScan.file}</p>
+        <h2>Failed Functions:</h2>
+        <ul>
+          ${formattedFailedFunctions.join('')}
+        </ul>
+        <p><strong>Created Date:</strong> ${selectedScan.createdDate}</p>
+      `;
 
       // Configure Nodemailer transporter (SMTP settings)
       const transporter = nodemailer.createTransport({
@@ -350,7 +416,7 @@ const main = async () => {
         from: 'your-email@example.com',
         to: email,
         subject: `Scan Information: Scan ID: ${scanId}`,
-        text: emailContent,
+        html: emailContent,
       };
 
       // Send the email
